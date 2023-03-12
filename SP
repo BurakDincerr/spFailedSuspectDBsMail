@@ -1,0 +1,29 @@
+	
+CREATE OR ALTER PROCEDURE sp_ControlFailedDbStatus
+AS
+BEGIN
+
+  DECLARE @xml NVARCHAR(MAX)
+  DECLARE @body NVARCHAR(MAX)
+
+  SET @xml = CAST(( SELECT NAME AS 'td','',state_desc AS 'td'
+  FROM SYS.DATABASES WHERE state_desc IN ( 'OFFLINE', 'SUSPECT','EMERGENCY ','RECOVERY_PENDING','RECOVERING','RECOVERY_PENDING','EMERGENCY')
+  FOR XML PATH('tr'), ELEMENTS ) AS NVARCHAR(MAX))
+
+  SET @body ='<html><body><H3>Databases that status changed </H3>
+  <table border = 1> 
+  <tr>
+  <th> DATABASE </th> <th> STATUS</th>  </tr>'    
+
+  SET @body = @body + @xml +'</table></body></html>'
+
+  EXEC msdb.dbo.sp_send_dbmail
+  @profile_name = '   ', -- replace with your SQL Database Mail Profile 
+  @body = @body,
+  @body_format ='HTML',
+  @recipients = '   @outlook.com', -- replace with your email address
+  @subject = 'Suspect or Offline Database Detected' ;
+
+
+
+END
